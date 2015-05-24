@@ -220,6 +220,14 @@ typedef void (^WaveformDataCompletionBlock)(float *waveformData, UInt32 length);
 -(BOOL)hasLoadedAudioData;
 
 /**
+ Asynchronously pulls a part of the waveform amplitude data into a float array for the receiver.
+ @param startFraction float between 0 and 1 that indicates where parital waveform begins
+ @param endFraction float between 0 and 1 that indicates where parital waveform begins
+ @param waveformDataCompletionBlock A WaveformDataCompletionBlock that executes when the waveform data has been extracted. Provides the waveform data as a float array and the length of the array.
+ */
+- (void)getPartialWaveformDataFromStart:(CGFloat)startFraction toEnd:(CGFloat)endFraction resolution:(UInt32)resolution withCompletionBlock:(WaveformDataCompletionBlock)waveformDataCompletionBlock;
+
+/**
  Asynchronously pulls the waveform amplitude data into a float array for the receiver.
  @param waveformDataCompletionBlock A WaveformDataCompletionBlock that executes when the waveform data has been extracted. Provides the waveform data as a float array and the length of the array.
  */

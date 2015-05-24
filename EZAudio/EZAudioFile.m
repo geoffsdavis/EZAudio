@@ -202,6 +202,90 @@
   return _waveformData != NULL;
 }
 
+- (void)getPartialWaveformDataFromStart:(CGFloat)startFraction toEnd:(CGFloat)endFraction resolution:(UInt32)resolution withCompletionBlock:(WaveformDataCompletionBlock)waveformDataCompletionBlock {
+    
+    NSLog(@"======== getPartialWaveformDataFromStart =========");
+    
+    SInt64 currentFramePosition = _frameIndex;
+    
+    CGFloat durationFraction = endFraction - startFraction;
+    NSLog(@"  - fraction: %.3f (%.3f - %.3f)", durationFraction, startFraction, endFraction);
+
+    UInt32 startFrame = _totalFrames * startFraction;
+    UInt32 endFrame = _totalFrames * endFraction;
+    
+    UInt32 partialWaveformFrameRate    = [self partialRecommendedDrawingFrameRate:durationFraction]; // frame-count of slices of the song data
+    UInt32 partialWaveformTotalBuffers = [self partialMinBuffersWithFrameRate:partialWaveformFrameRate duration:durationFraction]; //
+    float *partialWaveformData         = (float*)malloc(sizeof(float)*partialWaveformTotalBuffers);
+    
+    NSLog(@"  - _totalFrames: %u", _totalFrames);
+    NSLog(@"  - startFrame %u", startFrame);
+    NSLog(@"  - endFrame %u", endFrame);
+    NSLog(@"  -resolution: %u", resolution);
+    NSLog(@"  - partialWaveformFrameRate (slice size) %u", partialWaveformFrameRate);
+    
+    if( self.totalFrames == 0 ){
+        waveformDataCompletionBlock( partialWaveformData, partialWaveformTotalBuffers );
+        return;
+    }
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,0ul), ^{
+        
+        // Seek the audio file back to the beginning
+        [EZAudio checkResult:ExtAudioFileSeek( _audioFile, startFrame )
+                   operation:"Failed to seek frame position within audio file"];
+        
+        UInt32 currentFrame = startFrame;
+        for( int i = 0; i < resolution; i++ ) {
+            
+            
+            // Take a snapshot of each buffer through the audio file to form the waveform
+            AudioBufferList *bufferList = [EZAudio audioBufferListWithNumberOfFrames:partialWaveformFrameRate
+                                                                    numberOfChannels:_clientFormat.mChannelsPerFrame
+                                                                         interleaved:YES];
+            UInt32 bufferSize;
+            BOOL eof;
+            
+            // Read in the specified number of frames
+            [EZAudio checkResult:ExtAudioFileRead(_audioFile,
+                                                  &partialWaveformFrameRate,
+                                                  bufferList)
+                       operation:"Failed to read audio data from audio file"];
+            bufferSize = bufferList->mBuffers[0].mDataByteSize/sizeof(float);
+            bufferSize = MAX(1, bufferSize);
+            eof = partialWaveformFrameRate == 0;
+            //_frameIndex += _waveformFrameRate;
+            
+            // Calculate RMS of each buffer
+            float rms = [EZAudio RMS:bufferList->mBuffers[0].mData
+                              length:bufferSize];
+            partialWaveformData[i] = rms;
+            
+            // Since we malloc'ed, we should cleanup
+            [EZAudio freeBufferList:bufferList];
+            
+            
+            //NSLog(@"[%i]: %u", i, currentFrame);
+            
+            currentFrame += partialWaveformFrameRate;
+            
+        }
+        
+        // Seek the audio file back to the beginning
+        [EZAudio checkResult:ExtAudioFileSeek( _audioFile, currentFramePosition )
+                   operation:"Failed to seek frame position within audio file"];
+        _frameIndex = currentFramePosition;
+        
+        // Once we're done send off the waveform data
+        dispatch_async(dispatch_get_main_queue(), ^{
+            waveformDataCompletionBlock( partialWaveformData, partialWaveformTotalBuffers );
+        });
+        
+    });
+
+    
+}
+
 -(void)getWaveformDataWithCompletionBlock:(WaveformDataCompletionBlock)waveformDataCompletionBlock {
   
   SInt64 currentFramePosition = _frameIndex;
@@ -329,10 +413,26 @@
 }
 
 #pragma mark - Helpers
+-(UInt32)partialMinBuffersWithFrameRate:(UInt32)frameRate duration:(CGFloat)durationFraction {
+    frameRate = frameRate > 0 ? frameRate : 1;
+    UInt32 val = (UInt32) _totalFrames * durationFraction / frameRate + 1;
+    return MAX(1, val);
+}
+
 -(UInt32)minBuffersWithFrameRate:(UInt32)frameRate {
   frameRate = frameRate > 0 ? frameRate : 1;
   UInt32 val = (UInt32) _totalFrames / frameRate + 1;
   return MAX(1, val);
+}
+
+-(UInt32)partialRecommendedDrawingFrameRate:(CGFloat)durationFraction {
+    UInt32 val = 1;
+    if(_waveformResolution > 0){
+        val = (UInt32) _totalFrames * durationFraction / _waveformResolution;
+        if(val > 1)
+            --val;
+    }
+    return MAX(1, val);
 }
 
 -(UInt32)recommendedDrawingFrameRate {
