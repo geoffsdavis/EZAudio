@@ -149,7 +149,7 @@
     _floatBuffers[i] = (float*)malloc(outputBufferSize);
   }
   
-    [EZAudio printASBD:_fileFormat];
+    //[EZAudio printASBD:_fileFormat];
     
   // There's no waveform data yet
   _waveformData = NULL;
@@ -204,25 +204,27 @@
 
 - (void)getPartialWaveformDataFromStart:(CGFloat)startFraction toEnd:(CGFloat)endFraction resolution:(UInt32)resolution withCompletionBlock:(WaveformDataCompletionBlock)waveformDataCompletionBlock {
     
-    NSLog(@"======== getPartialWaveformDataFromStart =========");
+    //NSLog(@"======== getPartialWaveformDataFromStart =========");
     
     SInt64 currentFramePosition = _frameIndex;
     
     CGFloat durationFraction = endFraction - startFraction;
-    NSLog(@"  - fraction: %.3f (%.3f - %.3f)", durationFraction, startFraction, endFraction);
+    //NSLog(@"  - fraction: %.3f (%.3f - %.3f)", durationFraction, startFraction, endFraction);
 
     UInt32 startFrame = _totalFrames * startFraction;
     UInt32 endFrame = _totalFrames * endFraction;
     
-    UInt32 partialWaveformFrameRate    = [self partialRecommendedDrawingFrameRate:durationFraction]; // frame-count of slices of the song data
+    UInt32 partialWaveformFrameRate    = [self partialRecommendedDrawingFrameRate:durationFraction resolution:resolution]; // frame-count of slices of the song data
     UInt32 partialWaveformTotalBuffers = [self partialMinBuffersWithFrameRate:partialWaveformFrameRate duration:durationFraction]; //
     float *partialWaveformData         = (float*)malloc(sizeof(float)*partialWaveformTotalBuffers);
     
-    NSLog(@"  - _totalFrames: %u", _totalFrames);
-    NSLog(@"  - startFrame %u", startFrame);
-    NSLog(@"  - endFrame %u", endFrame);
-    NSLog(@"  -resolution: %u", resolution);
-    NSLog(@"  - partialWaveformFrameRate (slice size) %u", partialWaveformFrameRate);
+//    NSLog(@"  - _totalFrames: %u", _totalFrames);
+//    NSLog(@"  - _waveformResolution: %u", _waveformResolution);
+//    NSLog(@"  - startFrame %u", startFrame);
+//    NSLog(@"  - endFrame %u", endFrame);
+//    NSLog(@"  - resolution: %u", resolution);
+//    NSLog(@"  - partialWaveformFrameRate (slice size) %u", partialWaveformFrameRate);
+//    NSLog(@"  - partialWaveformTotalBuffers (total size) %u", partialWaveformTotalBuffers);
     
     if( self.totalFrames == 0 ){
         waveformDataCompletionBlock( partialWaveformData, partialWaveformTotalBuffers );
@@ -237,7 +239,6 @@
         
         UInt32 currentFrame = startFrame;
         for( int i = 0; i < resolution; i++ ) {
-            
             
             // Take a snapshot of each buffer through the audio file to form the waveform
             AudioBufferList *bufferList = [EZAudio audioBufferListWithNumberOfFrames:partialWaveformFrameRate
@@ -257,13 +258,12 @@
             //_frameIndex += _waveformFrameRate;
             
             // Calculate RMS of each buffer
-            float rms = [EZAudio RMS:bufferList->mBuffers[0].mData
-                              length:bufferSize];
+            float rms = [EZAudio RMS:bufferList->mBuffers[0].mData length:bufferSize];
+            
             partialWaveformData[i] = rms;
             
             // Since we malloc'ed, we should cleanup
             [EZAudio freeBufferList:bufferList];
-            
             
             //NSLog(@"[%i]: %u", i, currentFrame);
             
@@ -412,38 +412,51 @@
   }
 }
 
+
+
+
 #pragma mark - Helpers
--(UInt32)partialMinBuffersWithFrameRate:(UInt32)frameRate duration:(CGFloat)durationFraction {
-    frameRate = frameRate > 0 ? frameRate : 1;
-    UInt32 val = (UInt32) _totalFrames * durationFraction / frameRate + 1;
-    return MAX(1, val);
-}
 
--(UInt32)minBuffersWithFrameRate:(UInt32)frameRate {
-  frameRate = frameRate > 0 ? frameRate : 1;
-  UInt32 val = (UInt32) _totalFrames / frameRate + 1;
-  return MAX(1, val);
-}
 
--(UInt32)partialRecommendedDrawingFrameRate:(CGFloat)durationFraction {
+#pragma mark PARTIAL
+
+-(UInt32)partialRecommendedDrawingFrameRate:(CGFloat)durationFraction resolution:(UInt32)resolution {
     UInt32 val = 1;
     if(_waveformResolution > 0){
-        val = (UInt32) _totalFrames * durationFraction / _waveformResolution;
+        val = (UInt32) _totalFrames * durationFraction / resolution;
         if(val > 1)
             --val;
     }
     return MAX(1, val);
 }
 
--(UInt32)recommendedDrawingFrameRate {
-  UInt32 val = 1;
-  if(_waveformResolution > 0){
-    val = (UInt32) _totalFrames / _waveformResolution;
-    if(val > 1)
-      --val;
-  }
-  return MAX(1, val);
+-(UInt32)partialMinBuffersWithFrameRate:(UInt32)frameRate duration:(CGFloat)durationFraction {
+    frameRate = frameRate > 0 ? frameRate : 1;
+    UInt32 val = (UInt32) _totalFrames * durationFraction / frameRate;
+    return MAX(1, val +1);
 }
+
+
+#pragma mark FULL
+
+-(UInt32)recommendedDrawingFrameRate {
+    UInt32 val = 1;
+    if(_waveformResolution > 0){
+        val = (UInt32) _totalFrames / _waveformResolution;
+        if(val > 1)
+            --val;
+    }
+    return MAX(1, val);
+}
+
+-(UInt32)minBuffersWithFrameRate:(UInt32)frameRate {
+    frameRate = frameRate > 0 ? frameRate : 1;
+    UInt32 val = (UInt32) _totalFrames / frameRate;
+    return MAX(1, val + 1);
+}
+
+
+
 
 #pragma mark - Cleanup
 -(void)dealloc {
