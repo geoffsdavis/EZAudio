@@ -204,7 +204,7 @@
 
 - (void)getPartialWaveformDataFromStart:(CGFloat)startFraction toEnd:(CGFloat)endFraction resolution:(UInt32)resolution withCompletionBlock:(WaveformDataCompletionBlock)waveformDataCompletionBlock {
     
-    //NSLog(@"======== getPartialWaveformDataFromStart =========");
+    //NSLog(@"======== getPartialWaveformDataFromStart; PARTIAL =========");
     
     SInt64 currentFramePosition = _frameIndex;
     
@@ -287,6 +287,8 @@
 }
 
 -(void)getWaveformDataWithCompletionBlock:(WaveformDataCompletionBlock)waveformDataCompletionBlock {
+    
+    //NSLog(@"======== getWaveformDataWithCompletionBlock =========");
   
   SInt64 currentFramePosition = _frameIndex;
   
