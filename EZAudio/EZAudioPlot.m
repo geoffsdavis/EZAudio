@@ -289,6 +289,16 @@
   return _scrollHistoryLength;
 }
     
+-(void)clear {
+    if (plotLength > 0)
+    {
+        float data[plotLength];
+        memset(data, 0, plotLength * sizeof(float));
+        [self setSampleData:data length:plotLength];
+        [self setNeedsDisplay];
+    }
+}
+    
 -(void)dealloc {
   if( plotData ){
     free(plotData);

@@ -201,14 +201,14 @@
     UInt32 formatID = CFSwapInt32HostToBig(asbd.mFormatID);
     bcopy (&formatID, formatIDString, 4);
     formatIDString[4] = '\0';
-    NSLog (@"  Sample Rate:         %10.0f",  asbd.mSampleRate);
-    NSLog (@"  Format ID:           %10s",    formatIDString);
-    NSLog (@"  Format Flags:        %10X",    (unsigned int)asbd.mFormatFlags);
-    NSLog (@"  Bytes per Packet:    %10d",    (unsigned int)asbd.mBytesPerPacket);
-    NSLog (@"  Frames per Packet:   %10d",    (unsigned int)asbd.mFramesPerPacket);
-    NSLog (@"  Bytes per Frame:     %10d",    (unsigned int)asbd.mBytesPerFrame);
-    NSLog (@"  Channels per Frame:  %10d",    (unsigned int)asbd.mChannelsPerFrame);
-    NSLog (@"  Bits per Channel:    %10d",    (unsigned int)asbd.mBitsPerChannel);
+//    NSLog (@"  Sample Rate:         %10.0f",  asbd.mSampleRate);
+//    NSLog (@"  Format ID:           %10s",    formatIDString);
+//    NSLog (@"  Format Flags:        %10X",    (unsigned int)asbd.mFormatFlags);
+//    NSLog (@"  Bytes per Packet:    %10d",    (unsigned int)asbd.mBytesPerPacket);
+//    NSLog (@"  Frames per Packet:   %10d",    (unsigned int)asbd.mFramesPerPacket);
+//    NSLog (@"  Bytes per Frame:     %10d",    (unsigned int)asbd.mBytesPerFrame);
+//    NSLog (@"  Channels per Frame:  %10d",    (unsigned int)asbd.mChannelsPerFrame);
+//    NSLog (@"  Bits per Channel:    %10d",    (unsigned int)asbd.mBitsPerChannel);
 }
 
 +(void)setCanonicalAudioStreamBasicDescription:(AudioStreamBasicDescription*)asbd

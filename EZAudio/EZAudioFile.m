@@ -218,13 +218,11 @@
     UInt32 partialWaveformTotalBuffers = [self partialMinBuffersWithFrameRate:partialWaveformFrameRate duration:durationFraction]; //
     float *partialWaveformData         = (float*)malloc(sizeof(float)*partialWaveformTotalBuffers);
     
-//    NSLog(@"  - _totalFrames: %u", _totalFrames);
-//    NSLog(@"  - _waveformResolution: %u", _waveformResolution);
+
 //    NSLog(@"  - startFrame %u", startFrame);
 //    NSLog(@"  - endFrame %u", endFrame);
-//    NSLog(@"  - resolution: %u", resolution);
+//    NSLog(@"  -resolution: %u", resolution);
 //    NSLog(@"  - partialWaveformFrameRate (slice size) %u", partialWaveformFrameRate);
-//    NSLog(@"  - partialWaveformTotalBuffers (total size) %u", partialWaveformTotalBuffers);
     
     if( self.totalFrames == 0 ){
         waveformDataCompletionBlock( partialWaveformData, partialWaveformTotalBuffers );
